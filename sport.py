@@ -1,79 +1,76 @@
 import streamlit as st
 import pandas as pd
 import os
-from datetime import datetime  # Import voor de datumfunctie
+from datetime import datetime
+import time  # Voor vertraging bij succesbericht
 
-# Laad het Excel-bestand (als het nog niet bestaat, maak het dan)
+# Laad het Excel-bestand (of maak een nieuwe DataFrame als het niet bestaat)
 excel_bestand = 'Data sporten.xlsx'
-
-# Controleer of het bestand al bestaat
 if os.path.exists(excel_bestand):
     df = pd.read_excel(excel_bestand)
 else:
-    # Maak een lege DataFrame met de juiste kolommen als het bestand niet bestaat
-    df = pd.DataFrame(columns=['Datum', 'Oefening', 'Bericht'])
+    df = pd.DataFrame(columns=['Datum', 'Oefening', 'Hoevaak'])
 
-# Functie om de gegevens op te slaan in het Excel-bestand
-def save_to_excel(Datum, oefening, bericht):
-    global df  # Zorg ervoor dat we de globale df gebruiken
-    new_data = pd.DataFrame([[Datum, oefening, bericht]], columns=['Datum', 'Oefening', 'Bericht'])
-    df = pd.concat([df, new_data], ignore_index=True)
+# Functie om gegevens op te slaan
+def save_to_excel(data):
+    global df
+    df = pd.concat([df, pd.DataFrame(data)], ignore_index=True)
     df.to_excel(excel_bestand, index=False)
 
-# Sidebar knop voor navigatie
+# Sidebar navigatie
 st.sidebar.title("Navigatie")
 if 'page' not in st.session_state:
-    st.session_state.page = "Home"  # Standaard pagina is "Home"
+    st.session_state.page = "Home"
 
-# Radio button voor navigatie
 page = st.sidebar.radio("Kies een optie", ["Home", "Formulier"], index=["Home", "Formulier"].index(st.session_state.page))
 
-# Lijst met opties voor oefening
+# Oefening- en herhalingsopties
 oefeningen = ['Dumbell Press', 'Zittend Roeien Cables', 'Incline Bench Press', 'Tricep Extencion']
+hoevaak_opties = ['3x 10', '3x 9', '3x 8', '3x 7', '3x 6']
 
-# Als de gebruiker 'Formulier' kiest, toon de formulier sectie
 if page == "Formulier":
     st.title('Formulier om Excel-bestand bij te werken')
 
-    # Stel standaard de datum van vandaag in
-    vandaag = datetime.today().strftime('%Y-%m-%d')  # Formatteer als YYYY-MM-DD
+    # Standaard datum
+    vandaag = datetime.today().strftime('%Y-%m-%d')
+    Datum = st.text_input('Datum', value=vandaag)
 
-    if 'Datum' not in st.session_state:
-        st.session_state.Datum = vandaag  # Standaardwaarde is de datum van vandaag
+    # Initialiseer lijst voor oefeningen
+    if 'oefeningen' not in st.session_state:
+        st.session_state.oefeningen = [{'oef': oefeningen[0], 'rep': hoevaak_opties[0]}]
 
-    # Zorg ervoor dat 'oefening' een geldige standaardwaarde heeft
-    if 'oefening' not in st.session_state or st.session_state.oefening not in oefeningen:
-        st.session_state.oefening = oefeningen[0]  # Eerste optie als standaardwaarde
+    # Toon de dynamische invoervelden
+    for i, oefening in enumerate(st.session_state.oefeningen):
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            oefening['oef'] = st.selectbox(f'Oefening {i+1}', oefeningen, index=oefeningen.index(oefening['oef']), key=f'oef_{i}')
+        with col2:
+            oefening['rep'] = st.selectbox(f'Hoevaak {i+1}', hoevaak_opties, index=hoevaak_opties.index(oefening['rep']), key=f'rep_{i}')
 
-    if 'bericht' not in st.session_state:
-        st.session_state.bericht = ""
+    # Knoppen: Extra oefening & Opslaan
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        if st.button('➕ Extra oefening'):
+            st.session_state.oefeningen.append({'oef': oefeningen[0], 'rep': hoevaak_opties[0]})
+            st.rerun()
 
-    # Invoervelden
-    Datum = st.text_input('Datum', value=st.session_state.Datum)  # Datum staat standaard op vandaag
+    with col2:
+        if st.button('✅ Opslaan'):
+            if Datum and all(oef['oef'] and oef['rep'] for oef in st.session_state.oefeningen):
+                data = [{'Datum': Datum, 'Oefening': oef['oef'], 'Hoevaak': oef['rep']} for oef in st.session_state.oefeningen]
+                save_to_excel(data)
+                st.success('✅ Gegevens succesvol opgeslagen!')
 
-    # Dropdownmenu voor 'Oefening'
-    oefening = st.selectbox('Oefening', oefeningen, index=oefeningen.index(st.session_state.oefening))
+                # Wacht 3 seconden voordat de pagina verandert
+                time.sleep(3)
 
-    bericht = st.text_area('Bericht', value=st.session_state.bericht)
+                # Reset en terug naar Home
+                st.session_state.oefeningen = [{'oef': oefeningen[0], 'rep': hoevaak_opties[0]}]
+                st.session_state.page = "Home"
+                st.rerun()
+            else:
+                st.error('⚠️ Vul alle velden in!')
 
-    # Wanneer de knop wordt ingedrukt, sla de gegevens op in het Excel-bestand
-    if st.button('Opslaan'):
-        if Datum and oefening and bericht:
-            save_to_excel(Datum, oefening, bericht)
-            st.success('Gegevens succesvol opgeslagen in Excel!')
-
-            # Leeg de velden na het opslaan
-            st.session_state.Datum = vandaag  # Na opslaan blijft de datum van vandaag staan
-            st.session_state.oefening = oefeningen[0]  # Zet terug naar de standaardoptie
-            st.session_state.bericht = ""
-
-            # Zet de pagina terug naar 'Home' en herlaad de app
-            st.session_state.page = "Home"
-            st.experimental_rerun()
-        else:
-            st.error('Vul alle velden in!')
-
-# Als de gebruiker 'Home' kiest, toon een welkomstbericht
 else:
     st.title("Welkom op de Homepagina")
     st.write("Klik op de 'Formulier' optie in de sidebar om gegevens in te vullen.")
