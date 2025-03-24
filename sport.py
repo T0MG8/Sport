@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from datetime import datetime
 import time  # Voor vertraging bij succesbericht
+import plotly.express as px
 
 # Laad het Excel-bestand (of maak een nieuwe DataFrame als het niet bestaat)
 excel_bestand = 'Data sporten.xlsx'
@@ -110,8 +111,29 @@ elif page == "Gewicht":
             st.error("⚠️ Vul zowel het gewicht als de meting in!")
 
 else:
+# Titels instellen
     st.title("Welkom op de Homepagina")
-    st.write("Klik op de 'Formulier' optie in de sidebar om gegevens in te vullen.")
+
+# Data inlezen van het Excel-bestand, specifiek het blad 'Gewicht'
+    df = pd.read_excel("Data sporten.xlsx", sheet_name="Gewicht")
+
+# Verwijder eventuele spaties rondom de kolomnamen
+    df.columns = df.columns.str.strip()
+
+# Zorg ervoor dat de datumkolom als een datum wordt gelezen
+    df['Datum'] = pd.to_datetime(df['Datum'], errors='coerce')  # errors='coerce' voor ongeldige datums
+
+# Verwijder de tijd van de datumkolom (alleen de datum behouden)
+    df['Datum'] = df['Datum'].dt.date
+
+# Maak een lijndiagram met Plotly
+    fig = px.line(df, x='Datum', y='Gewichtmeting', 
+              title='Gewicht meting over de tijd',
+              labels={'Datum': 'Datum', 'Gewichtmeting': 'Gewichtmeting (kg)'})
+
+# Het interactieve diagram weergeven in de Streamlit app
+    st.plotly_chart(fig)
+
 
 
 
