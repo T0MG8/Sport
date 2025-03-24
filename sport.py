@@ -6,16 +6,31 @@ import time  # Voor vertraging bij succesbericht
 
 # Laad het Excel-bestand (of maak een nieuwe DataFrame als het niet bestaat)
 excel_bestand = 'Data sporten.xlsx'
+
+# Als het bestand bestaat, lees dan alle bladen in, anders maak de lege dataframes
 if os.path.exists(excel_bestand):
-    df = pd.read_excel(excel_bestand)
+    df = pd.read_excel(excel_bestand, sheet_name=None)  # Lees alle bladen in als een dict
 else:
-    df = pd.DataFrame(columns=['Datum', 'Oefening', 'Hoevaak', 'Gewicht'])
+    # Maak een nieuwe dictionary met de benodigde bladen als DataFrames
+    df = {
+        'Oefeningen': pd.DataFrame(columns=['Datum', 'Oefening', 'Hoevaak', 'Gewicht']),
+        'Gewicht': pd.DataFrame(columns=['Datum', 'Gewicht', 'Gewichtmeting'])
+    }
 
 # Functie om gegevens op te slaan
-def save_to_excel(data):
+def save_to_excel(data, sheet_name):
     global df
-    df = pd.concat([df, pd.DataFrame(data)], ignore_index=True)
-    df.to_excel(excel_bestand, index=False)
+    if sheet_name not in df:
+        # Maak een nieuw DataFrame aan als het blad nog niet bestaat
+        df[sheet_name] = pd.DataFrame(columns=data[0].keys())
+    
+    # Voeg de nieuwe data toe aan het juiste blad
+    df[sheet_name] = pd.concat([df[sheet_name], pd.DataFrame(data)], ignore_index=True)
+    
+    # Schrijf naar het Excel-bestand, meerdere bladen tegelijk
+    with pd.ExcelWriter(excel_bestand, engine='xlsxwriter') as writer:
+        for sheet, data_frame in df.items():
+            data_frame.to_excel(writer, sheet_name=sheet, index=False)
 
 # Sidebar navigatie
 st.sidebar.title("Navigatie")
@@ -62,7 +77,7 @@ if page == "Formulier":
         if st.button('✅ Opslaan'):
             if Datum and all(oef['oef'] and oef['rep'] and oef['gewicht'] for oef in st.session_state.oefeningen):
                 data = [{'Datum': Datum, 'Oefening': oef['oef'], 'Hoevaak': oef['rep'], 'Gewicht': oef['gewicht']} for oef in st.session_state.oefeningen]
-                save_to_excel(data)
+                save_to_excel(data, 'Oefeningen')
                 st.success('✅ Gegevens succesvol opgeslagen!')
 
                 # Wacht 3 seconden voordat de pagina verandert
@@ -76,12 +91,28 @@ if page == "Formulier":
                 st.error('⚠️ Vul alle velden in!')
 
 elif page == "Gewicht":
-    st.title("Gewicht Opties")
-    st.write("Hier kun je de verschillende gewicht-opties zien:")
-    st.write(gewicht_opties)  # Toon de lijst van gewichten
+    st.title("Gewicht")
+    
+    # Voer gewicht in
+    vandaag = datetime.today().strftime('%Y-%m-%d')
+    Datum1 = st.text_input('Datum', value=vandaag)
+    Gewichtmeting = st.text_input("Voer je Gewichtmeting in", value="")
+
+    if st.button("✅ Opslaan Gewicht"):
+        if Datum1 and Gewichtmeting:
+            data = [{'Datum': Datum1, 'Gewichtmeting': Gewichtmeting}]
+            save_to_excel(data, 'Gewicht')
+            st.success("✅ Gewicht en Gewichtmeting succesvol opgeslagen!")
+            time.sleep(3)  # Wacht 3 seconden voor navigatie terug naar Home
+            st.session_state.page = "Home"
+            st.rerun()
+        else:
+            st.error("⚠️ Vul zowel het gewicht als de meting in!")
 
 else:
     st.title("Welkom op de Homepagina")
     st.write("Klik op de 'Formulier' optie in de sidebar om gegevens in te vullen.")
+
+
 
 
