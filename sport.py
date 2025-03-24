@@ -25,9 +25,9 @@ if 'page' not in st.session_state:
 page = st.sidebar.radio("Kies een optie", ["Home", "Formulier"], index=["Home", "Formulier"].index(st.session_state.page))
 
 # Oefening- en herhalingsopties
-oefeningen = ['Dumbell Press', 'Zittend Roeien Cables', 'Incline Bench Press', 'Tricep Extencion']
-hoevaak_opties = ['3x 10', '3x 9', '3x 8', '3x 7', '3x 6']
-gewicht_opties = ['5kg', '10kg', '15kg', '20kg']  # Toegevoegde gewichten
+oefeningen = ['Dumbell Press', 'Zittend Roeien Cables', 'Incline Bench Press', 'Tricep Extencion', 'Lat Pull Down', 'Shoulder Press', 'Overhead Extencion']
+hoevaak_opties = ['10x', '9x', '8x', '7x', '6x', '5x', '4x', '3x', '2x', '1x']
+gewicht_opties = ['5kg', '10kg', '12kg', '14kg', '16kg', '18kg','20kg', '22kg', '24kg', '26kg', '28kg', '30kg', '32kg', '34kg', '36kg', '38kg', '40kg', '45kg', '50g', '55kg', '60kg', '70kg', '80kg', '90kg', '100kg', '110kg',' 120kg', '130kg','stand 1', 'stand 2', 'stand 3', 'stand 4', 'stand 5', 'stand 6', 'stand 7', 'stand 8', 'stand 9','stand 10', 'stand 11', 'stand 12','stand 13', 'stand 14', 'stand 15', 'stand 16', 'stand 17', 'stand 18', 'stand 19','stand 20','stand 21','stand 22','stand 23', 'stand 24', 'stand 25'] 
 
 if page == "Formulier":
     st.title('Formulier om Excel-bestand bij te werken')
