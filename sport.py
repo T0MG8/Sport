@@ -2,12 +2,12 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
-import time  # Voor vertraging bij succesbericht
+import time
 import plotly.express as px
-import plotly.graph_objects as go
+import subprocess
 
 # Laad het Excel-bestand (of maak een nieuwe DataFrame als het niet bestaat)
-excel_bestand = 'C:/Users/tomgo/OneDrive/Bureaublad/Test/Data sporten.xlsx'
+excel_bestand = 'Data sporten.xlsx'
 
 # Als het bestand bestaat, lees dan alle bladen in, anders maak de lege dataframes
 if os.path.exists(excel_bestand):
@@ -33,6 +33,24 @@ def save_to_excel(data, sheet_name):
     with pd.ExcelWriter(excel_bestand, engine='xlsxwriter') as writer:
         for sheet, data_frame in df.items():
             data_frame.to_excel(writer, sheet_name=sheet, index=False)
+
+# Functie voor synchronisatie naar GitHub
+def sync_to_github():
+    repo_path = '/pad/naar/jouw/repository'  # Het pad naar je Git-repository
+    bestandsnaam = os.path.join(repo_path, 'Data sporten.xlsx')
+
+    if os.path.exists(bestandsnaam):
+        try:
+            os.chdir(repo_path)
+            subprocess.run(['git', 'add', bestandsnaam], check=True)
+            commit_message = f"Update {bestandsnaam} op {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            subprocess.run(['git', 'commit', '-m', commit_message], check=True)
+            subprocess.run(['git', 'push', 'origin', 'main'], check=True)
+            print("✅ Gegevens succesvol gesynchroniseerd naar GitHub!")
+        except subprocess.CalledProcessError as e:
+            print(f"Fout bij Git-commando: {e}")
+    else:
+        print("⚠️ Het bestand bestaat niet.")
 
 # Sidebar navigatie
 st.sidebar.title("Navigatie")
@@ -82,6 +100,9 @@ if page == "Formulier":
                 save_to_excel(data, 'Oefeningen')
                 st.success('✅ Gegevens succesvol opgeslagen!')
 
+                # Synchroniseer met GitHub
+                sync_to_github()
+
                 # Wacht 3 seconden voordat de pagina verandert
                 time.sleep(5)
 
@@ -105,56 +126,36 @@ elif page == "Gewicht":
             data = [{'Datum': Datum1, 'Gewichtmeting': Gewichtmeting}]
             save_to_excel(data, 'Gewicht')
             st.success("✅ Gewicht en Gewichtmeting succesvol opgeslagen!")
+
+            # Synchroniseer met GitHub
+            sync_to_github()
+
             time.sleep(3)  # Wacht 3 seconden voor navigatie terug naar Home
             st.session_state.page = "Home"
             st.rerun()
         else:
             st.error("⚠️ Vul zowel het gewicht als de meting in!")
-
 else:
-    st.title("Welkom op de Homepagina")
-    df = pd.read_excel('C:/Users/tomgo/OneDrive/Bureaublad/Test/Data sporten.xlsx', sheet_name='Oefeningen')
+    # Data inlezen van het Excel-bestand, specifiek het blad 'Gewicht'
+    df = pd.read_excel('Data sporten.xlsx', sheet_name='Gewicht')
 
-# Lijst van unieke waarden in de kolom 'Oefening' voor de dropdown
-    oefeningen = df['Oefening'].unique()
-
-# Maak een lege figuur
-    fig = go.Figure()
-
-# Voeg de trace toe voor elke 'Oefening'
-    for oefening in oefeningen:
-        oefening_data = df[df['Oefening'] == 'Dumbell Press']
-        fig.add_trace(go.Scatter(x=oefening_data['Gewicht'], y=oefening_data['Hoevaak'], mode='markers', name=oefening))
-
-    # Toon de grafiek
-    st.plotly_chart(fig)
-
-
-#--------------------------------------------------------------------------------------------------------------------------------------------------
-
-#--------------------------------------------------------------------------------------------------------------------------------------------------
-
- 
-
-# Data inlezen van het Excel-bestand, specifiek het blad 'Gewicht'
-    df = pd.read_excel('C:/Users/tomgo/OneDrive/Bureaublad/Test/Data sporten.xlsx', sheet_name='Gewicht')
-
-# Verwijder eventuele spaties rondom de kolomnamen
+    # Verwijder eventuele spaties rondom de kolomnamen
     df.columns = df.columns.str.strip()
 
-# Zorg ervoor dat de datumkolom als een datum wordt gelezen
+    # Zorg ervoor dat de datumkolom als een datum wordt gelezen
     df['Datum'] = pd.to_datetime(df['Datum'], errors='coerce')  # errors='coerce' voor ongeldige datums
 
-# Verwijder de tijd van de datumkolom (alleen de datum behouden)
+    # Verwijder de tijd van de datumkolom (alleen de datum behouden)
     df['Datum'] = df['Datum'].dt.date
 
-# Maak een lijndiagram met Plotly
+    # Maak een lijndiagram met Plotly
     fig1 = px.line(df, x='Datum', y='Gewichtmeting', 
               title='Gewicht meting over de tijd',
               labels={'Datum': 'Datum', 'Gewichtmeting': 'Gewichtmeting (kg)'})
 
-# Het interactieve diagram weergeven in de Streamlit app
+    # Het interactieve diagram weergeven in de Streamlit app
     st.plotly_chart(fig1)
+
 
 
 
