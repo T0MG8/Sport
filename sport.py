@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 import time  # Voor vertraging bij succesbericht
 import plotly.express as px
+import plotly.graph_objects as go
 
 # Laad het Excel-bestand (of maak een nieuwe DataFrame als het niet bestaat)
 excel_bestand = 'Data sporten.xlsx'
@@ -111,8 +112,28 @@ elif page == "Gewicht":
             st.error("⚠️ Vul zowel het gewicht als de meting in!")
 
 else:
-# Titels instellen
     st.title("Welkom op de Homepagina")
+    df = pd.read_excel('Data sporten.xlsx', sheet_name='Oefeningen')
+# Lijst van unieke waarden in de kolom 'Oefening' voor de dropdown
+    oefeningen = df['Oefening'].unique()
+
+# Maak een lege figuur
+    fig = go.Figure()
+
+# Voeg de trace toe voor elke 'Oefening'
+    for oefening in oefeningen:
+        oefening_data = df[df['Oefening'] == 'Dumbell Press']
+        fig.add_trace(go.Scatter(x=oefening_data['Gewicht'], y=oefening_data['Hoevaak'], mode='markers', name=oefening))
+
+    # Toon de grafiek
+    st.plotly_chart(fig)
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------
+
+ 
 
 # Data inlezen van het Excel-bestand, specifiek het blad 'Gewicht'
     df = pd.read_excel("Data sporten.xlsx", sheet_name="Gewicht")
@@ -127,12 +148,12 @@ else:
     df['Datum'] = df['Datum'].dt.date
 
 # Maak een lijndiagram met Plotly
-    fig = px.line(df, x='Datum', y='Gewichtmeting', 
+    fig1 = px.line(df, x='Datum', y='Gewichtmeting', 
               title='Gewicht meting over de tijd',
               labels={'Datum': 'Datum', 'Gewichtmeting': 'Gewichtmeting (kg)'})
 
 # Het interactieve diagram weergeven in de Streamlit app
-    st.plotly_chart(fig)
+    st.plotly_chart(fig1)
 
 
 
