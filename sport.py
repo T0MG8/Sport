@@ -7,7 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # Laad het Excel-bestand (of maak een nieuwe DataFrame als het niet bestaat)
-excel_bestand = 'Data sporten.xlsx'
+excel_bestand = 'C:/Users/tomgo/OneDrive/Bureaublad/Test/Data sporten.xlsx'
 
 # Als het bestand bestaat, lees dan alle bladen in, anders maak de lege dataframes
 if os.path.exists(excel_bestand):
@@ -113,7 +113,8 @@ elif page == "Gewicht":
 
 else:
     st.title("Welkom op de Homepagina")
-    df = pd.read_excel('Data sporten.xlsx', sheet_name='Oefeningen')
+    df = pd.read_excel('C:/Users/tomgo/OneDrive/Bureaublad/Test/Data sporten.xlsx', sheet_name='Oefeningen')
+
 # Lijst van unieke waarden in de kolom 'Oefening' voor de dropdown
     oefeningen = df['Oefening'].unique()
 
@@ -136,7 +137,7 @@ else:
  
 
 # Data inlezen van het Excel-bestand, specifiek het blad 'Gewicht'
-    df = pd.read_excel("Data sporten.xlsx", sheet_name="Gewicht")
+    df = pd.read_excel('C:/Users/tomgo/OneDrive/Bureaublad/Test/Data sporten.xlsx', sheet_name='Gewicht')
 
 # Verwijder eventuele spaties rondom de kolomnamen
     df.columns = df.columns.str.strip()
