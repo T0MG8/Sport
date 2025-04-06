@@ -36,7 +36,7 @@ if page == "Gewicht":
         
         # Controleer of Datum een string is en zet het om naar een datetime object
         if isinstance(Datum, str):
-            Datum = pd.to_datetime(Datum, errors='coerce')  # Zet de string om naar datetime, gebruik errors='coerce' om ongeldig formaat af te handelen
+            Datum = pd.to_datetime(Datum, errors='coerce', dayfirst=True)  # Zet de string om naar datetime, gebruik errors='coerce' om ongeldig formaat af te handelen
         
         # Controleer of Datum een geldige datetime is
         if not isinstance(Datum, pd.Timestamp):
