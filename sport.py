@@ -82,15 +82,23 @@ if page == "Sport":
     oefeningen = oefeningsoorten_df["Oefeningsoort"].dropna().tolist()
 
     hoevaak_opties = [str(i) for i in range(12, 0, -1)]
+    
     def frange(start, stop, step):
-        while start < stop:
-            yield start
+        while start <= stop:
+            yield round(start, 2)
             start += step
 
-    # Gewicht opties: 6–40 (+2), 42.5–50 (+2.5), 55–150 (+5)
-    gewicht_opties = [str(i) for i in list(range(6, 41, 2))] + \
-                    [str(round(i, 1)) for i in frange(42.5, 51, 2.5)] + \
-                    [str(i) for i in range(55, 151, 5)]
+    # Reeksen genereren
+    optie_1 = list(frange(1.25, 50, 1.25))
+    optie_2 = list(frange(2, 40, 2))
+    optie_3 = list(frange(55, 150, 5))
+    optie_4 = list(frange(1, 25, 1))
+
+    # Alles combineren en unieke waardes behouden
+    alle_opties = sorted(set(optie_1 + optie_2 + optie_3 + optie_4))
+
+    # Converteer naar strings
+    gewicht_opties = [str(i) for i in alle_opties]
 
 
 
@@ -113,15 +121,15 @@ if page == "Sport":
         with col2:
             oefening['rep'] = st.selectbox(f'Herhalingen {i+1}', hoevaak_opties, key=f'rep_{i}')
         with col3:
-            oefening['gewicht'] = st.selectbox(f'Gewicht {i+1} (kg)', gewicht_opties, key=f'gewicht_{i}')
+            oefening['gewicht'] = st.selectbox(f'Gewicht {i+1} (kg of stand)', gewicht_opties, key=f'gewicht_{i}')
 
     col1, col2 = st.columns([1, 3])
-    with col1:
+    with col2:
         if st.button("➕ Extra oefening"):
             st.session_state.oefeningen.append({'oef': oefeningen[0], 'rep': hoevaak_opties[0], 'gewicht': gewicht_opties[0]})
             st.rerun()
 
-    with col2:
+    with col1:
         if st.button("✅ Opslaan"):
             if Datum and all(oef['oef'] and oef['rep'] and oef['gewicht'] for oef in st.session_state.oefeningen):
                 nieuwe_data = pd.DataFrame([
@@ -167,12 +175,31 @@ elif page == "Instellingen":
             st.success(f"✅ '{nieuwe_oef.strip()}' toegevoegd.")
 
             # Ga terug naar sportpagina
-            st.session_state.page = "Sport"
+            st.session_state.page = "Home"
             st.rerun()
 
 
-else:
-    st.write("Kolom")
+elif page == "Home":
+    sport_data = conn.read(worksheet="Oefeningen", ttl=5)
+    sport_data = sport_data.dropna(how="all")
+
+    # Zorg dat 'Gewicht' numeriek is (optioneel, als dat soms strings zijn)
+    sport_data['Gewicht'] = pd.to_numeric(sport_data['Gewicht'], errors='coerce')
+
+    # Per oefening: vind de rij met het hoogste gewicht
+    idx = sport_data.groupby('Oefening')['Gewicht'].idxmax()
+    top_rijen = sport_data.loc[idx]
+
+    # Alleen de gewenste kolommen tonen
+    kolommen = ['Oefening', 'Gewicht', 'Herhalingen', 'Datum']
+    top_rijen = top_rijen[kolommen].sort_values(by='Gewicht', ascending=False)
+
+    # Tabel tonen in Streamlit
+    st.title("Zwaarste sets per oefening")
+    st.dataframe(top_rijen.reset_index(drop=True))
+
+# ---------------------------------------------------------------------------------------------------------------------
+    st.title("Gewicht over de tijd")
 
     # Zet de 'Datum' kolom om naar een datetime object
     existing_data['Datum'] = pd.to_datetime(existing_data['Datum'], format='%d-%m-%Y')
@@ -181,7 +208,7 @@ else:
     existing_data['Datum'] = existing_data['Datum'].dt.date
 
     # Maak de lijngrafiek
-    fig = px.line(existing_data, x='Datum', y='Gewicht', title='Gewicht over de tijd')
+    fig = px.line(existing_data, x='Datum', y='Gewicht')
 
     # Zet markers aan voor de lijn
     fig.update_traces(mode='lines+markers')  # Voeg markers toe aan de lijn
@@ -197,7 +224,36 @@ else:
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+    st.title("Gewicht vs Herhalingen")
 
+    oefeningen = sport_data['Oefening'].unique().tolist()
+    oefeningen.sort()
+    oefeningen_opties = ['Alle Oefeningen'] + oefeningen
+
+    # Dropdown boven de plot
+    gekozen_oefening = st.selectbox(
+        'Kies een oefening om te tonen:',
+        options=oefeningen_opties
+    )
+
+    # Data filteren op keuze
+    if gekozen_oefening != 'Alle Oefeningen':
+        gefilterde_data = sport_data[sport_data['Oefening'] == gekozen_oefening]
+    else:
+        gefilterde_data = sport_data
+
+    # Plot maken
+    fig1 = px.scatter(
+        gefilterde_data,
+        x='Gewicht',
+        y='Herhalingen',
+        color='Oefening',
+        labels={'Gewicht': 'Gewicht (kg)', 'Herhalingen': 'Aantal Herhalingen'},
+        template='plotly_white'
+    )
+
+    # Plot tonen
+    st.plotly_chart(fig1)
 
 
 
