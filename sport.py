@@ -4,6 +4,16 @@ import datetime
 import pandas as pd
 import plotly.express as px
 
+st.set_page_config(page_title="Mijn App", layout="wide")
+
+tab1, tab2, tab3, tab4= st.tabs(["🏠 Home", "🏋️‍♂️ Sport", "⚖️ Gewicht", "⚙️ Instellingen"])
+
+
+
+
+
+
+
 # Verbind met Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -11,21 +21,21 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 existing_data = conn.read(worksheet="Gewicht", usecols=list(range(2)), ttl=5)
 existing_data = existing_data.dropna(how="all")
 
-# Sidebar navigatie
-st.sidebar.title("Navigatie")
-if 'page' not in st.session_state:
-    st.session_state.page = "Home"
+# # Sidebar navigatie
+# st.sidebar.title("Navigatie")
+# if 'page' not in st.session_state:
+#     st.session_state.page = "Home"
 
-# Voeg een nieuwe optie "Gewicht" toe
-page = st.sidebar.radio(
-    "Kies een optie",
-    ["Home", "Gewicht", "Sport", "Instellingen"],
-    index=["Home", "Gewicht", "Sport", "Instellingen"].index(st.session_state.page)
-)
+# # Voeg een nieuwe optie "Gewicht" toe
+# page = st.sidebar.radio(
+#     "Kies een optie",
+#     ["Home", "Gewicht", "Sport", "Instellingen"],
+#     index=["Home", "Gewicht", "Sport", "Instellingen"].index(st.session_state.page)
+# )
 
 
-if page == "Gewicht":
-    st.title("Gewicht")
+# if page == "Gewicht":
+with tab3:
     with st.form(key="vendor_form"):
         vandaag = datetime.date.today().strftime('%d-%m-%Y')
         Datum = st.text_input("Datum", value=vandaag)
@@ -71,7 +81,10 @@ if page == "Gewicht":
     st.dataframe(existing_data.tail(5))
 
 
-if page == "Sport":
+# if page == "Sport":
+with tab2:
+    st.header("Data overzicht")
+    st.write("Hier kun je je data tonen, grafieken etc.")
     st.title("Sport")
 
     # Lees de lijst met oefeningen uit het tabblad 'Oefeningsoort'
@@ -156,7 +169,10 @@ if page == "Sport":
     st.dataframe(sport_data.tail(5))
 
 
-elif page == "Instellingen":
+# elif page == "Instellingen":
+with tab4:
+    st.header("Instellingen")
+    st.write("Hier kun je instellingen aanpassen.")
     st.title("Nieuwe oefening toevoegen")
 
     oefeningsoorten_df = conn.read(worksheet="Oefeningsoort", ttl=5)
@@ -179,7 +195,8 @@ elif page == "Instellingen":
             st.rerun()
 
 
-elif page == "Home":
+# elif page == "Home":
+with tab1:
     sport_data = conn.read(worksheet="Oefeningen", ttl=5)
     sport_data = sport_data.dropna(how="all")
 
@@ -254,9 +271,3 @@ elif page == "Home":
 
     # Plot tonen
     st.plotly_chart(fig1)
-
-
-
-
-
-
