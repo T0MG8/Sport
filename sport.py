@@ -202,41 +202,50 @@ with tab1:
     st.dataframe(top_rijen.reset_index(drop=True))
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Maak twee kolommen aan
-col1, col2 = st.columns(2)
+    st.title("Gewicht over de tijd")
 
-with col1:
-    st.subheader("Gewicht over de tijd")
-    
+    # Zet de 'Datum' kolom om naar een datetime object
     existing_data['Datum'] = pd.to_datetime(existing_data['Datum'], format='%d-%m-%Y')
+
+    # Zorg ervoor dat we alleen de datum zonder tijd weergeven
     existing_data['Datum'] = existing_data['Datum'].dt.date
 
+    # Maak de lijngrafiek
     fig = px.line(existing_data, x='Datum', y='Gewicht')
-    fig.update_traces(mode='lines+markers')
-    fig.update_layout(
-        xaxis=dict(showgrid=True),
-        yaxis=dict(showgrid=True)
-    )
-    st.plotly_chart(fig, use_container_width=True)
 
-with col2:
-    st.subheader("Gewicht vs Herhalingen")
+    # Zet markers aan voor de lijn
+    fig.update_traces(mode='lines+markers')  # Voeg markers toe aan de lijn
+
+    # Zet de grid aan voor zowel x- en y-as
+    fig.update_layout(
+        xaxis=dict(showgrid=True),  # Zet grid aan voor x-as
+        yaxis=dict(showgrid=True)   # Zet grid aan voor y-as
+    )
+
+    # Toon de grafiek
+    st.plotly_chart(fig)
+
+# ---------------------------------------------------------------------------------------------------------------------
+
+    st.title("Gewicht vs Herhalingen")
 
     oefeningen = sport_data['Oefening'].unique().tolist()
     oefeningen.sort()
     oefeningen_opties = ['Alle Oefeningen'] + oefeningen
 
+    # Dropdown boven de plot
     gekozen_oefening = st.selectbox(
         'Kies een oefening om te tonen:',
-        options=oefeningen_opties,
-        key='oefening_selectbox'  # key toevoegen om dubbele widgets te voorkomen
+        options=oefeningen_opties
     )
 
+    # Data filteren op keuze
     if gekozen_oefening != 'Alle Oefeningen':
         gefilterde_data = sport_data[sport_data['Oefening'] == gekozen_oefening]
     else:
         gefilterde_data = sport_data
 
+    # Plot maken
     fig1 = px.scatter(
         gefilterde_data,
         x='Gewicht',
@@ -245,4 +254,6 @@ with col2:
         labels={'Gewicht': 'Gewicht (kg)', 'Herhalingen': 'Aantal Herhalingen'},
         template='plotly_white'
     )
-    st.plotly_chart(fig1, use_container_width=True)
+
+    # Plot tonen
+    st.plotly_chart(fig1)
