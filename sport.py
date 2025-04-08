@@ -178,11 +178,70 @@ with tab4:
             st.session_state.page = "Home"
             st.rerun()
 
+    st.markdown("---")
+    st.subheader("📉 Laatste 5 gewichtsmetingen verwijderen")
+
+    # Laatste 5 rijen tonen
+    if not existing_data.empty:
+        # Laatste 5 rijen ophalen
+        laatste_rijen = existing_data.tail(5).copy()
+        laatste_rijen['Weergave'] = laatste_rijen['Datum'].astype(str) + " - " + laatste_rijen['Gewicht'].astype(str) + " kg"
+
+        # Selectie van te verwijderen rij
+        geselecteerd = st.selectbox("Kies een meting om te verwijderen:", options=laatste_rijen['Weergave'].tolist())
+
+        if st.button("🗑️ Verwijder geselecteerde meting"):
+            # De rij verwijderen
+            index_te_verwijderen = laatste_rijen[laatste_rijen['Weergave'] == geselecteerd].index[0]
+            existing_data = existing_data.drop(index_te_verwijderen).reset_index(drop=True)
+
+            # Sheet bijwerken
+            conn.update(worksheet="Gewicht", data=existing_data)
+            st.success(f"✅ Meting '{geselecteerd}' verwijderd.")
+            st.rerun()
+    else:
+        st.info("Er zijn nog geen gewichtsmetingen opgeslagen.")
+
+
+    st.markdown("---")
+    st.subheader("🏋️ Laatste 5 sportoefeningen verwijderen")
+
+    # Laad bestaande sportdata
+    sport_data = conn.read(worksheet="Oefeningen", ttl=5)
+    sport_data = sport_data.dropna(how="all")
+
+    if not sport_data.empty:
+        # Laatste 5 rijen ophalen
+        laatste_oefeningen = sport_data.tail(5).copy()
+
+        # Maak een weergavekolom voor selectie
+        laatste_oefeningen['Weergave'] = (
+            laatste_oefeningen['Datum'].astype(str) + " | " +
+            laatste_oefeningen['Oefening'].astype(str) + " | " +
+            laatste_oefeningen['Herhalingen'].astype(str) + "x | " +
+            laatste_oefeningen['Gewicht'].astype(str) + "kg"
+        )
+
+        geselecteerde_oef = st.selectbox("Kies een oefening om te verwijderen:", options=laatste_oefeningen['Weergave'].tolist())
+
+        if st.button("🗑️ Verwijder geselecteerde oefening"):
+            index_te_verwijderen = laatste_oefeningen[laatste_oefeningen['Weergave'] == geselecteerde_oef].index[0]
+            sport_data = sport_data.drop(index_te_verwijderen).reset_index(drop=True)
+
+            # Sheet bijwerken
+            conn.update(worksheet="Oefeningen", data=sport_data)
+            st.success(f"✅ Oefening '{geselecteerde_oef}' verwijderd.")
+            st.rerun()
+    else:
+        st.info("Er zijn nog geen oefeningen opgeslagen.")
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 with tab1:
+
+    st.markdown("---")
     sport_data = conn.read(worksheet="Oefeningen", ttl=5)
     sport_data = sport_data.dropna(how="all")
 
@@ -202,6 +261,7 @@ with tab1:
     st.dataframe(top_rijen.reset_index(drop=True))
 
 # ---------------------------------------------------------------------------------------------------------------------
+    st.markdown("---")
     st.title("Gewicht over de tijd")
 
     # Zet de 'Datum' kolom om naar een datetime object
@@ -227,6 +287,7 @@ with tab1:
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+    st.markdown("---")
     # Zorg dat Datum datetime is
     sport_data['Datum'] = pd.to_datetime(sport_data['Datum'], format='%d-%m-%Y', errors='coerce')
 
@@ -262,7 +323,7 @@ with tab1:
     st.plotly_chart(fig_hist, use_container_width=True)
 
 # ---------------------------------------------------------------------------------------------------------------------
-
+    st.markdown("---")
     st.title("Gewicht vs Herhalingen")
 
     oefeningen = sport_data['Oefening'].unique().tolist()
@@ -293,3 +354,4 @@ with tab1:
 
     # Plot tonen
     st.plotly_chart(fig1)
+    st.markdown("---")
