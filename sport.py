@@ -227,6 +227,42 @@ with tab1:
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+    # Zorg dat Datum datetime is
+    sport_data['Datum'] = pd.to_datetime(sport_data['Datum'], format='%d-%m-%Y', errors='coerce')
+
+    # Unieke datums pakken (dus dubbele dagen eruit)
+    unieke_dagen = sport_data[['Datum']].drop_duplicates().copy()
+
+    # Weeknummer en Jaar toevoegen
+    unieke_dagen['Weeknummer'] = unieke_dagen['Datum'].dt.isocalendar().week
+    unieke_dagen['Jaar'] = unieke_dagen['Datum'].dt.isocalendar().year
+
+    # Groeperen op Jaar + Weeknummer en aantal unieke dagen tellen
+    trainings_frequentie = unieke_dagen.groupby(['Jaar', 'Weeknummer']).size().reset_index(name='AantalDagen')
+
+    # Voor de x-as maken we een string zoals "2024-W13" voor overzicht
+    trainings_frequentie['Week'] = 'Week ' + trainings_frequentie['Weeknummer'].astype(str)
+
+    # Plotten
+    fig_hist = px.bar(
+        trainings_frequentie,
+        x='Week',
+        y='AantalDagen',
+        labels={'AantalDagen': 'Unieke trainingsdagen', 'Week': 'Week'},
+        title='Aantal unieke trainingsdagen per week',
+    )
+
+    fig_hist.update_layout(
+        xaxis_tickangle=-45,
+        yaxis=dict(dtick=1),
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+
+    st.title("Aantal keer gesport per week")
+    st.plotly_chart(fig_hist, use_container_width=True)
+
+# ---------------------------------------------------------------------------------------------------------------------
+
     st.title("Gewicht vs Herhalingen")
 
     oefeningen = sport_data['Oefening'].unique().tolist()
@@ -257,3 +293,7 @@ with tab1:
 
     # Plot tonen
     st.plotly_chart(fig1)
+
+
+
+
