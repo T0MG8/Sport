@@ -149,8 +149,13 @@ with tab2:
                 st.warning("⚠️ Vul alle velden in!")
 
 
-    st.markdown("### Eerder ingevoerde sportgegevens")
-    st.dataframe(sport_data.tail(5))
+    # Filter de data op de datum van vandaag
+    vandaag_df = sport_data[sport_data["Datum"] == vandaag]
+
+    # Toon de gefilterde gegevens
+    st.markdown("### Eerder ingevoerde sportgegevens van vandaag")
+    st.dataframe(vandaag_df)
+
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -245,12 +250,15 @@ with tab1:
     sport_data = conn.read(worksheet="Oefeningen", ttl=5)
     sport_data = sport_data.dropna(how="all")
 
-    # Zorg dat 'Gewicht' numeriek is (optioneel, als dat soms strings zijn)
+    # Zorg dat 'Gewicht' en 'Herhalingen' numeriek zijn
     sport_data['Gewicht'] = pd.to_numeric(sport_data['Gewicht'], errors='coerce')
+    sport_data['Herhalingen'] = pd.to_numeric(sport_data['Herhalingen'], errors='coerce')
 
-    # Per oefening: vind de rij met het hoogste gewicht
-    idx = sport_data.groupby('Oefening')['Gewicht'].idxmax()
-    top_rijen = sport_data.loc[idx]
+    # Sorteer eerst op Gewicht (aflopend), dan Herhalingen (aflopend)
+    gesorteerd = sport_data.sort_values(by=['Oefening', 'Gewicht', 'Herhalingen'], ascending=[True, False, False])
+
+    # Neem de eerste rij per oefening (dus hoogste gewicht, en bij gelijk gewicht hoogste herhalingen)
+    top_rijen = gesorteerd.groupby('Oefening', as_index=False).first()
 
     # Alleen de gewenste kolommen tonen
     kolommen = ['Oefening', 'Gewicht', 'Herhalingen', 'Datum']
@@ -259,6 +267,7 @@ with tab1:
     # Tabel tonen in Streamlit
     st.title("Zwaarste sets per oefening")
     st.dataframe(top_rijen.reset_index(drop=True))
+
 
 # ---------------------------------------------------------------------------------------------------------------------
     st.markdown("---")
