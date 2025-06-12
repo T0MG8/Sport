@@ -80,7 +80,7 @@ with tab2:
     # Haal de oefeningen uit de kolom 'Oefeningsoort' als lijst
     oefeningen = oefeningsoorten_df["Oefeningsoort"].dropna().tolist()
 
-    hoevaak_opties = [str(i) for i in range(12, 0, -1)]
+    hoevaak_opties = [str(i) for i in range(10, 0, -1)]
     
     def frange(start, stop, step):
         while start <= stop:
@@ -335,32 +335,44 @@ with tab1:
     st.markdown("---")
     st.title("Gewicht vs Herhalingen")
 
+    # Dropdown voor oefeningselectie
     oefeningen = sport_data['Oefening'].unique().tolist()
     oefeningen.sort()
     oefeningen_opties = ['Alle Oefeningen'] + oefeningen
 
-    # Dropdown boven de plot
     gekozen_oefening = st.selectbox(
         'Kies een oefening om te tonen:',
         options=oefeningen_opties
     )
 
-    # Data filteren op keuze
+    # Filter de data
     if gekozen_oefening != 'Alle Oefeningen':
         gefilterde_data = sport_data[sport_data['Oefening'] == gekozen_oefening]
     else:
         gefilterde_data = sport_data
 
+    # Zorg dat Datum een datetime-object is
+    gefilterde_data['Datum'] = pd.to_datetime(gefilterde_data['Datum'])
+
     # Plot maken
     fig1 = px.scatter(
         gefilterde_data,
-        x='Gewicht',
-        y='Herhalingen',
-        color='Oefening',
-        labels={'Gewicht': 'Gewicht (kg)', 'Herhalingen': 'Aantal Herhalingen'},
-        template='plotly_white'
+        x='Datum',
+        y='Gewicht',
+        size='Herhalingen',
+        color='Herhalingen',
+        labels={
+            'Datum': 'Datum',
+            'Gewicht': 'Gewicht (kg)',
+            'Herhalingen': 'Aantal Herhalingen'
+        },
+        title=f"Progressie {'voor ' + gekozen_oefening if gekozen_oefening != 'Alle Oefeningen' else 'voor alle oefeningen'}",
+        color_continuous_scale=['green', 'yellow', 'red'],
+        size_max=30,
+        template='plotly_white',
+        hover_data=['Oefening', 'Herhalingen']
     )
 
-    # Plot tonen
+    # Toon de grafiek
     st.plotly_chart(fig1)
     st.markdown("---")
